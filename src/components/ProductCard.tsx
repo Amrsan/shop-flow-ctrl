@@ -19,12 +19,14 @@ import { cn } from "@/lib/utils";
 export interface Product {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   price: number;
-  image: string;
+  image: string | null;
   category: string;
   stock: number;
   status: 'active' | 'draft' | 'archived';
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ProductCardProps {

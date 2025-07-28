@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, Filter, Grid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProductCard, Product } from "@/components/ProductCard";
 import { ProductForm } from "@/components/ProductForm";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 // Mock data
 const initialProducts: Product[] = [
@@ -59,60 +60,132 @@ const initialProducts: Product[] = [
 ];
 
 export default function Products() {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+
+  // Load products from Supabase
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setProducts((data || []) as Product[]);
+    } catch (error) {
+      console.error('Error loading products:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load products",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const categories = ["all", ...Array.from(new Set(products.map(p => p.category)))];
 
   const filteredProducts = products.filter((product) => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchQuery.toLowerCase());
+                         (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase()));
     const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
     const matchesStatus = selectedStatus === "all" || product.status === selectedStatus;
     
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const handleAddProduct = (productData: any) => {
-    const newProduct: Product = {
-      ...productData,
-      id: Date.now().toString(),
-    };
-    setProducts([newProduct, ...products]);
-    toast({
-      title: "Product added",
-      description: "The product has been successfully added.",
-    });
+  const handleAddProduct = async (productData: any) => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .insert([productData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProducts([data as Product, ...products]);
+      toast({
+        title: "Product added",
+        description: "The product has been successfully added.",
+      });
+    } catch (error) {
+      console.error('Error adding product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add product",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEditProduct = (productData: any) => {
+  const handleEditProduct = async (productData: any) => {
     if (!editingProduct) return;
     
-    setProducts(products.map(p => 
-      p.id === editingProduct.id 
-        ? { ...productData, id: editingProduct.id }
-        : p
-    ));
-    setEditingProduct(null);
-    toast({
-      title: "Product updated",
-      description: "The product has been successfully updated.",
-    });
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .update(productData)
+        .eq('id', editingProduct.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setProducts(products.map(p => 
+        p.id === editingProduct.id ? (data as Product) : p
+      ));
+      setEditingProduct(null);
+      toast({
+        title: "Product updated",
+        description: "The product has been successfully updated.",
+      });
+    } catch (error) {
+      console.error('Error updating product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update product",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setProducts(products.filter(p => p.id !== id));
-    toast({
-      title: "Product deleted",
-      description: "The product has been successfully deleted.",
-      variant: "destructive",
-    });
+  const handleDeleteProduct = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setProducts(products.filter(p => p.id !== id));
+      toast({
+        title: "Product deleted",
+        description: "The product has been successfully deleted.",
+        variant: "destructive",
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleViewProduct = (product: Product) => {
