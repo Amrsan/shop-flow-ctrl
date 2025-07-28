@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -78,6 +78,31 @@ export function ProductForm({ isOpen, onClose, onSubmit, product }: ProductFormP
   });
 
   const watchedStatus = watch("status");
+
+  // Reset form when product changes
+  useEffect(() => {
+    if (product) {
+      reset({
+        title: product.title,
+        description: product.description,
+        price: product.price,
+        category: product.category,
+        stock: product.stock,
+        status: product.status,
+      });
+      setImagePreview(product.image || "");
+    } else {
+      reset({
+        title: "",
+        description: "",
+        price: 0,
+        category: "",
+        stock: 0,
+        status: "active",
+      });
+      setImagePreview("");
+    }
+  }, [product, reset]);
 
   const handleImageUpload = (file: File) => {
     const reader = new FileReader();
