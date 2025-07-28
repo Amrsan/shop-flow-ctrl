@@ -241,7 +241,10 @@ export function ProductForm({ isOpen, onClose, onSubmit, product }: ProductFormP
 
             <div>
               <Label htmlFor="category">Category</Label>
-              <Select onValueChange={(value) => setValue("category", value)}>
+              <Select 
+                value={watch("category")} 
+                onValueChange={(value) => setValue("category", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
@@ -260,7 +263,10 @@ export function ProductForm({ isOpen, onClose, onSubmit, product }: ProductFormP
 
             <div>
               <Label htmlFor="status">Status</Label>
-              <Select onValueChange={(value) => setValue("status", value as any)}>
+              <Select 
+                value={watchedStatus} 
+                onValueChange={(value) => setValue("status", value as any)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
