@@ -1,0 +1,136 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+
+interface Order {
+  id: number;
+  created_at: string;
+  customer_name: string | null;
+  items: string | null;
+  total: number | null;
+  address: string | null;
+  payment_method: string | null;
+  shipping_method: string | null;
+}
+
+const Orders = () => {
+  const { data: orders, isLoading, error } = useQuery<Order[]>({
+    queryKey: ["orders"],
+    queryFn: async () => {
+      // Use direct query bypassing TypeScript strict typing
+      const { data, error } = await (supabase as any)
+        .from("orders")
+        .select("*")
+        .order("created_at", { ascending: false });
+      
+      if (error) throw error;
+      return data as Order[];
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-muted rounded w-48"></div>
+          <div className="h-64 bg-muted rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">Error loading orders: {error.message}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const formatCurrency = (amount: number | null) => {
+    if (!amount) return "N/A";
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount / 100); // Assuming stored in cents
+  };
+
+  return (
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Orders</h1>
+        <Badge variant="secondary">{orders?.length || 0} orders</Badge>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>All Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {!orders || orders.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No orders found</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Payment Method</TableHead>
+                  <TableHead>Shipping Method</TableHead>
+                  <TableHead>Created</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">#{order.id}</TableCell>
+                    <TableCell>{order.customer_name || "N/A"}</TableCell>
+                    <TableCell className="max-w-xs truncate">
+                      {order.items || "N/A"}
+                    </TableCell>
+                    <TableCell className="font-semibold">
+                      {formatCurrency(order.total)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {order.payment_method || "N/A"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">
+                        {order.shipping_method || "N/A"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default Orders;
