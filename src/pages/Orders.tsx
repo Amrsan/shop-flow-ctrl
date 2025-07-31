@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Table,
@@ -10,12 +10,18 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Order {
   id: number;
   created_at: string;
   customer_name: string | null;
+  product_name: string | null;
   items: string | null;
   total: number | null;
   address: string | null;
@@ -24,6 +30,10 @@ interface Order {
 }
 
 const Orders = () => {
+  const [selectedOrders, setSelectedOrders] = useState<number[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: orders, isLoading, error } = useQuery<Order[]>({
     queryKey: ["orders"],
     queryFn: async () => {
@@ -37,6 +47,54 @@ const Orders = () => {
       return data as Order[];
     },
   });
+
+  const deleteOrdersMutation = useMutation({
+    mutationFn: async (orderIds: number[]) => {
+      const { error } = await (supabase as any)
+        .from("orders")
+        .delete()
+        .in("id", orderIds);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setSelectedOrders([]);
+      toast({
+        title: "Success",
+        description: "Selected orders have been deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to delete orders: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(orders?.map(order => order.id) || []);
+    } else {
+      setSelectedOrders([]);
+    }
+  };
+
+  const handleSelectOrder = (orderId: number, checked: boolean) => {
+    if (checked) {
+      setSelectedOrders(prev => [...prev, orderId]);
+    } else {
+      setSelectedOrders(prev => prev.filter(id => id !== orderId));
+    }
+  };
+
+  const handleDeleteSelected = () => {
+    if (selectedOrders.length > 0) {
+      deleteOrdersMutation.mutate(selectedOrders);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -77,8 +135,19 @@ const Orders = () => {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>All Orders</CardTitle>
+          {selectedOrders.length > 0 && (
+            <Button
+              onClick={handleDeleteSelected}
+              variant="destructive"
+              size="sm"
+              disabled={deleteOrdersMutation.isPending}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Selected ({selectedOrders.length})
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {!orders || orders.length === 0 ? (
@@ -89,8 +158,16 @@ const Orders = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-12">
+                    <Checkbox
+                      checked={selectedOrders.length === orders.length}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="Select all orders"
+                    />
+                  </TableHead>
                   <TableHead>Order ID</TableHead>
                   <TableHead>Customer</TableHead>
+                  <TableHead>Product</TableHead>
                   <TableHead>Items</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Payment Method</TableHead>
@@ -101,8 +178,16 @@ const Orders = () => {
               <TableBody>
                 {orders.map((order) => (
                   <TableRow key={order.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedOrders.includes(order.id)}
+                        onCheckedChange={(checked) => handleSelectOrder(order.id, checked as boolean)}
+                        aria-label={`Select order ${order.id}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">#{order.id}</TableCell>
                     <TableCell>{order.customer_name || "N/A"}</TableCell>
+                    <TableCell>{order.product_name || "N/A"}</TableCell>
                     <TableCell className="max-w-xs truncate">
                       {order.items || "N/A"}
                     </TableCell>
