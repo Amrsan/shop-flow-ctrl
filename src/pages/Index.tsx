@@ -86,7 +86,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-success text-success-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300">
+        <Card className="bg-gradient-success text-success-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300 align-self-end">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
