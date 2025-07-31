@@ -106,7 +106,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-0 shadow-soft hover:shadow-medium transition-all duration-300">
+{/*         <Card className="bg-gradient-card border-0 shadow-soft hover:shadow-medium transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-primary" />
@@ -124,7 +124,7 @@ const Index = () => {
               View Analytics →
             </a>
           </CardContent>
-        </Card>
+        </Card> */}
       </div>
 
       {/* Recent Activity */}
