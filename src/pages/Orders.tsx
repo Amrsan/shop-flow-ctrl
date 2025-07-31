@@ -12,10 +12,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface Order {
   id: number;
@@ -27,6 +29,7 @@ interface Order {
   address: string | null;
   payment_method: string | null;
   shipping_method: string | null;
+  status: string;
 }
 
 const Orders = () => {
@@ -69,6 +72,31 @@ const Orders = () => {
       toast({
         title: "Error",
         description: `Failed to delete orders: ${error.message}`,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateOrderStatusMutation = useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+      const { error } = await (supabase as any)
+        .from("orders")
+        .update({ status })
+        .eq("id", orderId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      toast({
+        title: "Success",
+        description: "Order status updated.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: `Failed to update order status: ${error.message}`,
         variant: "destructive",
       });
     },
@@ -124,7 +152,33 @@ const Orders = () => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-    }).format(amount / 100); // Assuming stored in cents
+    }).format(amount); // Fixed: amount is already in dollars, not cents
+  };
+
+  const handleStatusChange = (orderId: number, status: string) => {
+    updateOrderStatusMutation.mutate({ orderId, status });
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'default';
+      case 'cancelled':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
+  const getRowClassName = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'bg-green-50 hover:bg-green-100 border-green-200';
+      case 'cancelled':
+        return 'bg-red-50 hover:bg-red-100 border-red-200';
+      default:
+        return '';
+    }
   };
 
   return (
@@ -172,12 +226,13 @@ const Orders = () => {
                   <TableHead>Total</TableHead>
                   <TableHead>Payment Method</TableHead>
                   <TableHead>Shipping Method</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orders.map((order) => (
-                  <TableRow key={order.id}>
+                  <TableRow key={order.id} className={cn(getRowClassName(order.status))}>
                     <TableCell>
                       <Checkbox
                         checked={selectedOrders.includes(order.id)}
@@ -203,6 +258,28 @@ const Orders = () => {
                       <Badge variant="secondary">
                         {order.shipping_method || "N/A"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={order.status}
+                        onValueChange={(value) => handleStatusChange(order.id, value)}
+                        disabled={updateOrderStatusMutation.isPending}
+                      >
+                        <SelectTrigger className="w-28">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">
+                            <Badge variant="secondary">Pending</Badge>
+                          </SelectItem>
+                          <SelectItem value="success">
+                            <Badge variant="default">Success</Badge>
+                          </SelectItem>
+                          <SelectItem value="cancelled">
+                            <Badge variant="destructive">Cancelled</Badge>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDistanceToNow(new Date(order.created_at), { addSuffix: true })}
