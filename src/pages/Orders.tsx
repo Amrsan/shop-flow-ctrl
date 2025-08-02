@@ -18,6 +18,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { logActivity } from "@/lib/activityLogger";
 
 interface Order {
   id: number;
@@ -53,12 +54,27 @@ const Orders = () => {
 
   const deleteOrdersMutation = useMutation({
     mutationFn: async (orderIds: number[]) => {
+      // Get order details before deletion for logging
+      const ordersToDelete = orders?.filter(order => orderIds.includes(order.id)) || [];
+      
       const { error } = await (supabase as any)
         .from("orders")
         .delete()
         .in("id", orderIds);
       
       if (error) throw error;
+      
+      // Log activities for deleted orders
+      for (const order of ordersToDelete) {
+        await logActivity(
+          'order_deleted',
+          'order',
+          order.id.toString(),
+          `Order #${order.id}`,
+          'Order removed from system',
+          { customer: order.customer_name, total: order.total }
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -78,13 +94,26 @@ const Orders = () => {
   });
 
   const updateOrderStatusMutation = useMutation({
-    mutationFn: async ({ orderId, status }: { orderId: number; status: string }) => {
+    mutationFn: async ({ orderId, status, oldStatus }: { orderId: number; status: string; oldStatus: string }) => {
       const { error } = await (supabase as any)
         .from("orders")
         .update({ status })
         .eq("id", orderId);
       
       if (error) throw error;
+      
+      // Log activity for status change
+      const order = orders?.find(o => o.id === orderId);
+      if (order) {
+        await logActivity(
+          'order_status_changed',
+          'order',
+          orderId.toString(),
+          `Order #${orderId}`,
+          `Order status changed from ${oldStatus} to ${status}`,
+          { old_status: oldStatus, new_status: status, customer: order.customer_name }
+        );
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -156,7 +185,9 @@ const Orders = () => {
   };
 
   const handleStatusChange = (orderId: number, status: string) => {
-    updateOrderStatusMutation.mutate({ orderId, status });
+    const order = orders?.find(o => o.id === orderId);
+    const oldStatus = order?.status || 'unknown';
+    updateOrderStatusMutation.mutate({ orderId, status, oldStatus });
   };
 
   const getStatusBadgeVariant = (status: string) => {

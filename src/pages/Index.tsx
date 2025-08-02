@@ -1,7 +1,10 @@
 import { BarChart3, Package, ShoppingCart, DollarSign, TrendingUp, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useActivities, getActivityColor, formatTimeAgo } from "@/hooks/useActivities";
 
 const Index = () => {
+  const { data: activities, isLoading: activitiesLoading } = useActivities(5);
+
   const stats = [
     {
       title: "Total Revenue",
@@ -133,32 +136,47 @@ const Index = () => {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 bg-success rounded-full"></div>
-              <div className="flex-1">
-                <p className="font-medium">New order received</p>
-                <p className="text-sm text-muted-foreground">Order #12345 - $99.99</p>
-              </div>
-              <span className="text-sm text-muted-foreground">2 min ago</span>
+          {activitiesLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                  <div className="h-2 w-2 bg-muted rounded-full animate-pulse"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-muted rounded animate-pulse"></div>
+                    <div className="h-3 bg-muted rounded w-2/3 animate-pulse"></div>
+                  </div>
+                  <div className="h-3 bg-muted rounded w-16 animate-pulse"></div>
+                </div>
+              ))}
             </div>
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 bg-primary rounded-full"></div>
-              <div className="flex-1">
-                <p className="font-medium">Product updated</p>
-                <p className="text-sm text-muted-foreground">Wireless Headphones - Stock updated</p>
-              </div>
-              <span className="text-sm text-muted-foreground">1 hour ago</span>
+          ) : (
+            <div className="space-y-4">
+              {activities && activities.length > 0 ? (
+                activities.map((activity) => (
+                  <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                    <div className={`h-2 w-2 ${getActivityColor(activity.action_type)} rounded-full`}></div>
+                    <div className="flex-1">
+                      <p className="font-medium">{activity.description}</p>
+                      {activity.entity_name && (
+                        <p className="text-sm text-muted-foreground">
+                          {activity.entity_name}
+                          {activity.metadata?.total && ` - $${activity.metadata.total}`}
+                          {activity.metadata?.customer && ` by ${activity.metadata.customer}`}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      {formatTimeAgo(activity.created_at)}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No recent activity</p>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
-              <div className="h-2 w-2 bg-warning rounded-full"></div>
-              <div className="flex-1">
-                <p className="font-medium">Low stock alert</p>
-                <p className="text-sm text-muted-foreground">Smart Watch - Only 3 items left</p>
-              </div>
-              <span className="text-sm text-muted-foreground">3 hours ago</span>
-            </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>

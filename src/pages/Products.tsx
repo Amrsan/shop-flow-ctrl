@@ -14,6 +14,7 @@ import { ProductCard, Product } from "@/components/ProductCard";
 import { ProductForm } from "@/components/ProductForm";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { logActivity } from "@/lib/activityLogger";
 
 // Mock data
 const initialProducts: Product[] = [
@@ -118,6 +119,17 @@ export default function Products() {
       if (error) throw error;
 
       setProducts([data as Product, ...products]);
+      
+      // Log activity
+      await logActivity(
+        'product_added',
+        'product',
+        data.id,
+        data.title,
+        'New product added to catalog',
+        { category: data.category, price: data.price }
+      );
+      
       toast({
         title: "Product added",
         description: "The product has been successfully added.",
@@ -148,6 +160,17 @@ export default function Products() {
       setProducts(products.map(p => 
         p.id === editingProduct.id ? (data as Product) : p
       ));
+      
+      // Log activity
+      await logActivity(
+        'product_updated',
+        'product',
+        data.id,
+        data.title,
+        'Product information updated',
+        { category: data.category, price: data.price, stock: data.stock }
+      );
+      
       setEditingProduct(null);
       toast({
         title: "Product updated",
@@ -164,6 +187,8 @@ export default function Products() {
   };
 
   const handleDeleteProduct = async (id: string) => {
+    const productToDelete = products.find(p => p.id === id);
+    
     try {
       const { error } = await supabase
         .from('products')
@@ -173,6 +198,19 @@ export default function Products() {
       if (error) throw error;
 
       setProducts(products.filter(p => p.id !== id));
+      
+      // Log activity
+      if (productToDelete) {
+        await logActivity(
+          'product_deleted',
+          'product',
+          id,
+          productToDelete.title,
+          'Product removed from catalog',
+          { category: productToDelete.category, price: productToDelete.price }
+        );
+      }
+      
       toast({
         title: "Product deleted",
         description: "The product has been successfully deleted.",
