@@ -28,6 +28,7 @@ export function useActivities(limit: number = 10) {
 
       return data as Activity[];
     },
+    refetchInterval: 5000, // Refresh every 5 seconds to show new activities
   });
 }
 
