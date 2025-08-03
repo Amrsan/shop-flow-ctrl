@@ -204,7 +204,7 @@ const Orders = () => {
   const getRowClassName = (status: string) => {
     switch (status) {
       case 'success':
-        return 'bg-green-50 hover:bg-green-100 border-green-200';
+        return 'bg-green-50 hover:bg-green-100 border-green-200 text-light';
       case 'cancelled':
         return 'bg-red-50 hover:bg-red-100 border-red-200';
       default:
