@@ -304,7 +304,7 @@ const Orders = () => {
                             <Badge variant="secondary">Pending</Badge>
                           </SelectItem>
                           <SelectItem value="success">
-                            <Badge variant="primary">Success</Badge>
+                            <Badge variant="default" style={{backgroundColor: "green"}}>Success</Badge>
                           </SelectItem>
                           <SelectItem value="cancelled">
                             <Badge variant="destructive">Cancelled</Badge>
