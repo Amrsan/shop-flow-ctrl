@@ -202,15 +202,15 @@ const Orders = () => {
   };
 
   const getRowClassName = (status: string) => {
-    switch (status) {
-      case 'success':
-        return 'bg-green-50 hover:bg-green-100 border-green-200 text-dark';
-      case 'cancelled':
-        return 'bg-red-50 hover:bg-red-100 border-red-200';
-      default:
-        return '';
-    }
-  };
+  switch (status) {
+    case 'success':
+      return 'bg-green-50 hover:bg-green-100 border-green-200 text-black';
+    case 'cancelled':
+      return 'bg-red-50 hover:bg-red-100 border-red-200 text-black';
+    default:
+      return '';
+  }
+};
 
   return (
     <div className="p-6 space-y-6">
