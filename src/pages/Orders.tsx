@@ -281,7 +281,7 @@ const Orders = () => {
                       {formatCurrency(order.total)}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="text-success">
+                      <Badge variant="outline"  style="color:#935eee;">
                         {order.payment_method || "N/A"}
                       </Badge>
                     </TableCell>
