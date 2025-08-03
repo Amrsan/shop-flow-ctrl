@@ -304,7 +304,7 @@ const Orders = () => {
                             <Badge variant="secondary">Pending</Badge>
                           </SelectItem>
                           <SelectItem value="success">
-                            <Badge variant="success">Success</Badge>
+                            <Badge variant="primary">Success</Badge>
                           </SelectItem>
                           <SelectItem value="cancelled">
                             <Badge variant="destructive">Cancelled</Badge>
