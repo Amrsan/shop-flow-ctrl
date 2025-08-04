@@ -68,8 +68,8 @@ const Index = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        <Card className="bg-gradient-primary text-primary-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300">
+      <div className="flex flex-col md:flex-row justify-between">
+        <Card className="bg-gradient-primary text-primary-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300 w-full md:max-w-[48%] mb-4 md:mb-0">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5" />
@@ -89,7 +89,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-success text-success-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300 align-self-end">
+        <Card className="bg-gradient-success text-success-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300 align-self-end w-full md:max-w-[48%]">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
