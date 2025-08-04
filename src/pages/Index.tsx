@@ -68,7 +68,7 @@ const Index = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         <Card className="bg-gradient-primary text-primary-foreground border-0 shadow-medium hover:shadow-large transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
